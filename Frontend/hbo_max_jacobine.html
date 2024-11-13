@@ -1,0 +1,57 @@
+<h1>HBO Max Database Analyse</h1>
+<p> Wanner u op de knop drukt start u de visualisatie van de analyse van HBO Max dataset</p>
+<br>
+
+<body>
+<button onclick = "visualisatie()">Visualiseer!</button>
+<br>
+<br>
+<div id="mean_votes"></div>
+<div id="mean_rating"></div>
+<br>
+<div id="median_votes_div"></div>
+<div id="median_rating_div"></div>
+<br>
+<div id="std_votes_div"></div>
+<div id="std_rating_div"></div>
+<br>
+<div id="correlatie_div"></div>
+
+<script>
+    function visualisatie(){
+        fetch("http://127.0.0.1:5000/jacobine")
+        .then(r => r.json())
+        .then(d => mean_weergeven(d))
+    }
+
+    function mean_weergeven(d){
+        console.log(d.num_votes.mean_num_votes);
+        let gem_num_votes = document.getElementById("mean_votes")
+        gem_num_votes.innerHTML = "Gemiddelde aantal stemmen: " + d.num_votes.mean_num_votes.toString();
+
+        console.log(d.ratings.mean_average_rating);
+        let mean_rating_hbo = document.getElementById("mean_rating")
+        mean_rating_hbo.innerHTML = "Gemiddelde beoordeling: " + d.ratings.mean_average_rating.toString();
+
+        console.log(d.num_votes.median_num_votes);
+        let mediaan_num_votes = document.getElementById("median_votes_div")
+        mediaan_num_votes.innerHTML = "Mediaan aantal stemmen: " + d.num_votes.median_num_votes.toString();
+
+        console.log(d.ratings.median_average_rating);
+        let mediaan_rating_hbo = document.getElementById("median_rating_div")
+        mediaan_rating_hbo.innerHTML = "Mediaan beoordeling: " + d.ratings.median_average_rating.toString();
+
+        console.log(d.num_votes.std_num_votes);
+        let std_van_num_votes = document.getElementById("std_votes_div")
+        std_van_num_votes.innerHTML = "Standaard deviatie aantal stemmen: " + d.num_votes.std_num_votes.toString();
+
+        console.log(d.ratings.std_average_rating);
+        let std_van_rating_hbo = document.getElementById("std_rating_div")
+        std_van_rating_hbo.innerHTML = "Standaard deviatie beoordeling: " + d.ratings.std_average_rating.toString();
+
+        console.log(d.correlatie.correlatie_between_rating_votes.imdbNumVotes);
+        let correlatie_hbo = document.getElementById("correlatie_div")
+        correlatie_hbo.innerHTML = "De correlatie tussem aantal stemmen en rating is: " + d.correlatie.correlatie_between_rating_votes.toString();
+    }
+</script>
+</body>
