@@ -8,5 +8,5 @@ cors = CORS(app)
 
 @app.route("/jacobine")
 def jacobinestrial():
-    parsed, json_res_num_votes, json_res_rating, json_res_correlatie = hbo_max_jacobine.start()
-    return jsonify({"parsed": parsed, "num_votes": json_res_num_votes, "ratings": json_res_rating, "correlatie": json_res_correlatie})
+    parsed, json_res_num_votes, json_res_rating, json_res_correlatie, json_res_scatter = hbo_max_jacobine.start()
+    return jsonify({"parsed": parsed, "num_votes": json_res_num_votes, "ratings": json_res_rating, "correlatie": json_res_correlatie, "scatter_data": json_res_scatter})
