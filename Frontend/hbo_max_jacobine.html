@@ -3,55 +3,126 @@
 <br>
 
 <body>
-<button onclick = "visualisatie()">Visualiseer!</button>
-<br>
-<br>
-<div id="mean_votes"></div>
-<div id="mean_rating"></div>
-<br>
-<div id="median_votes_div"></div>
-<div id="median_rating_div"></div>
-<br>
-<div id="std_votes_div"></div>
-<div id="std_rating_div"></div>
-<br>
-<div id="correlatie_div"></div>
+    <button onclick="visualisatie()">Visualiseer!</button>
+    <br>
+    <br>
+    <div id="mean_votes"></div>
+    <div id="mean_rating"></div>
+    <br>
+    <div id="median_votes_div"></div>
+    <div id="median_rating_div"></div>
+    <br>
+    <div id="std_votes_div"></div>
+    <div id="std_rating_div"></div>
+    <br>
+    <div id="correlatie_div"></div>
+    <br>
+    <div id="scatterplot_regressielijn"></div>
 
-<script>
-    function visualisatie(){
-        fetch("http://127.0.0.1:5000/jacobine")
-        .then(r => r.json())
-        .then(d => mean_weergeven(d))
+    <!-- Gebruik de plotly library om in javascript een scatterplot te maken -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <!-- Gebruik de simple statistics library om de regressielijn te berekenen-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.7.0/simple-statistics.min.js"></script>
+    <script>
+        function visualisatie(){
+            fetch("http://127.0.0.1:5000/jacobine")
+            .then(r => r.json())
+            .then(d => spreiding_weergeven(d))
+        }
+
+        function spreiding_weergeven(d){
+            console.log(d);  // Log de ontvangen data
+
+            // Check of 'scatter_data' daadwerkelijk bestaat in de response
+            if (d.scatter_data) {
+                Create_Scatter_Plot(d.scatter_data);
+            } else {
+                console.log("Geen scatter_data ontvangen");
+            }
+
+
+            console.log(d.num_votes.mean_num_votes);
+            let gem_num_votes = document.getElementById("mean_votes")
+            gem_num_votes.innerHTML = "Gemiddelde aantal stemmen: " + d.num_votes.mean_num_votes.toString();
+
+            console.log(d.ratings.mean_average_rating);
+            let mean_rating_hbo = document.getElementById("mean_rating")
+            mean_rating_hbo.innerHTML = "Gemiddelde beoordeling: " + d.ratings.mean_average_rating.toString();
+
+            console.log(d.num_votes.median_num_votes);
+            let mediaan_num_votes = document.getElementById("median_votes_div")
+            mediaan_num_votes.innerHTML = "Mediaan aantal stemmen: " + d.num_votes.median_num_votes.toString();
+
+            console.log(d.ratings.median_average_rating);
+            let mediaan_rating_hbo = document.getElementById("median_rating_div")
+            mediaan_rating_hbo.innerHTML = "Mediaan beoordeling: " + d.ratings.median_average_rating.toString();
+
+            console.log(d.num_votes.std_num_votes);
+            let std_van_num_votes = document.getElementById("std_votes_div")
+            std_van_num_votes.innerHTML = "Standaard deviatie aantal stemmen: " + d.num_votes.std_num_votes.toString();
+
+            console.log(d.ratings.std_average_rating);
+            let std_van_rating_hbo = document.getElementById("std_rating_div")
+            std_van_rating_hbo.innerHTML = "Standaard deviatie beoordeling: " + d.ratings.std_average_rating.toString();
+
+            console.log(d.correlatie.correlatie_between_rating_votes.imdbNumVotes);
+            let correlatie_hbo = document.getElementById("correlatie_div")
+            correlatie_hbo.innerHTML = "De correlatie tussem aantal stemmen en rating is: " + d.correlatie.correlatie_between_rating_votes.toString();
+        }
+
+        function Create_Scatter_Plot(input) {
+        input_json = JSON.parse(input);         // Zet de JSON input om naar een JavaScript object
+        
+        // Haal de IMDb ratings (x) en het aantal stemmen (y) op uit de input
+        const list_imdb_ratings = Object.values(input_json["imdbAverageRating"]);
+        const list_imdb_votes = Object.values(input_json["imdbNumVotes"]);
+
+        // Bereken de lineaire regressie met behulp van de simple-statistics library
+        const regression = ss.linearRegression(
+            list_imdb_ratings.map((rating, index) => [rating, list_imdb_votes[index]])  // Maak een array van [rating, aantal stemmen]
+        );
+
+        // Verkrijg de regressielijn door de lineaire regressie toe te passen
+        const line = ss.linearRegressionLine(regression);
+
+        // Maak de scatterplot trace met de IMDb ratings en stemmen
+        var trace1 = {
+            x: list_imdb_ratings,  // x-as: IMDb ratings
+            y: list_imdb_votes,    // y-as: aantal stemmen
+            mode: "markers",       // Gebruik markers voor de punten
+            type: "scatter",       // Specificeer dat het een scatterplot is
+            name: "IMDb Ratings vs Votes", // Naam van de trace
+            marker: { size: 8, color: "blue" }, // Pas de marker aan (grootte en kleur)
+        };
+
+        // Maak de regressielijn door de lineaire regressie toe te passen op de x-waarden (ratings)
+        const regression_line_x = list_imdb_ratings;  // Gebruik de IMDb ratings als x-waarden voor de regressielijn
+        const regression_line_y = regression_line_x.map(line);  // Bereken de y-waarden (aantal stemmen) voor de regressielijn
+
+        // Maak een tweede trace voor de regressielijn
+        var trace2 = {
+            x: regression_line_x,  // x-waarden voor de regressielijn
+            y: regression_line_y,  // y-waarden voor de regressielijn
+            mode: "lines",         // Gebruik lijnen voor de regressielijn
+            type: "scatter",       // Specificeer dat het een scatterplot is (maar met lijnen)
+            name: "Regressielijn", // Naam van de regressielijn
+            line: { color: "red", width: 2 },  // Pas de lijn aan (kleur en breedte)
+        };
+
+        // Voeg de scatterplot trace en de regressielijn trace samen in één array
+        const data = [trace1, trace2];
+
+        // Definieer de layout van de plot
+        const layout = {
+            title: "Spreidingsdiagram IMDb Beoordelingen and Aantal Stemmen met Regressielijn", // Titel van de grafiek
+            xaxis: { title: "IMDb Average Rating" },  // Titel van de x-as
+            yaxis: { title: "IMDb Number of Votes" },  // Titel van de y-as
+            showlegend: false,  // Legenda uit
+        };
+
+        // Maak de plot met de data en de layout
+        Plotly.newPlot("scatterplot_regressielijn", data, layout, { scrollZoom: true });
     }
 
-    function mean_weergeven(d){
-        console.log(d.num_votes.mean_num_votes);
-        let gem_num_votes = document.getElementById("mean_votes")
-        gem_num_votes.innerHTML = "Gemiddelde aantal stemmen: " + d.num_votes.mean_num_votes.toString();
-
-        console.log(d.ratings.mean_average_rating);
-        let mean_rating_hbo = document.getElementById("mean_rating")
-        mean_rating_hbo.innerHTML = "Gemiddelde beoordeling: " + d.ratings.mean_average_rating.toString();
-
-        console.log(d.num_votes.median_num_votes);
-        let mediaan_num_votes = document.getElementById("median_votes_div")
-        mediaan_num_votes.innerHTML = "Mediaan aantal stemmen: " + d.num_votes.median_num_votes.toString();
-
-        console.log(d.ratings.median_average_rating);
-        let mediaan_rating_hbo = document.getElementById("median_rating_div")
-        mediaan_rating_hbo.innerHTML = "Mediaan beoordeling: " + d.ratings.median_average_rating.toString();
-
-        console.log(d.num_votes.std_num_votes);
-        let std_van_num_votes = document.getElementById("std_votes_div")
-        std_van_num_votes.innerHTML = "Standaard deviatie aantal stemmen: " + d.num_votes.std_num_votes.toString();
-
-        console.log(d.ratings.std_average_rating);
-        let std_van_rating_hbo = document.getElementById("std_rating_div")
-        std_van_rating_hbo.innerHTML = "Standaard deviatie beoordeling: " + d.ratings.std_average_rating.toString();
-
-        console.log(d.correlatie.correlatie_between_rating_votes.imdbNumVotes);
-        let correlatie_hbo = document.getElementById("correlatie_div")
-        correlatie_hbo.innerHTML = "De correlatie tussem aantal stemmen en rating is: " + d.correlatie.correlatie_between_rating_votes.toString();
-    }
-</script>
+    </script>
 </body>
